@@ -10,7 +10,7 @@ We love your input! We want to make contributing to this project as easy and tra
 5. Make sure your code lints.
 6. Issue that pull request!
 
-Please read [docs/AGENTS.md](docs/AGENTS.md) and [docs/UI_UX_GUIDELINES.md](docs/UI_UX_GUIDELINES.md) before contributing to ensure consistency.
+Please read [AGENTS.md](AGENTS.md) and [docs/UI_UX_GUIDELINES.md](docs/UI_UX_GUIDELINES.md) before contributing to ensure consistency.
 
 ## Git Workflow
 1. **Branching Strategy**: We use standard feature branching.
