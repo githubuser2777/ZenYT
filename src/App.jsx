@@ -9,7 +9,7 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   
-  const { progress, downloading, startDownload } = useDownload();
+  const { progress, downloading, downloadError, downloadComplete, startDownload } = useDownload();
 
   async function fetchInfo() {
     if (!url) return;
@@ -57,8 +57,11 @@ function App() {
           {videoInfo.thumbnail && (
             <img src={videoInfo.thumbnail} alt="Thumbnail" />
           )}
-          <h3>{videoInfo.title}</h3>
-          <p>Duration: {videoInfo.duration}s | Uploader: {videoInfo.uploader}</p>
+          <h3>{videoInfo.title || "Unknown Title"}</h3>
+          <p>
+            Duration: {videoInfo.duration ? `${videoInfo.duration}s` : "Unknown"} | 
+            Uploader: {videoInfo.uploader || "Unknown"}
+          </p>
           
           <button 
             style={{ marginTop: "15px", width: "100%" }}
@@ -67,6 +70,9 @@ function App() {
           >
             {downloading ? "Downloading..." : "Download Video"}
           </button>
+          
+          {downloadError && <p style={{ color: "#ff6b6b", marginTop: "1rem" }}>Download Failed: {downloadError}</p>}
+          {downloadComplete && <p style={{ color: "#51cf66", marginTop: "1rem" }}>Download Complete!</p>}
           
           {progress && (
             <div style={{ marginTop: "15px" }}>

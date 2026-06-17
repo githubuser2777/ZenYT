@@ -3,10 +3,14 @@ use std::io::{BufRead, BufReader};
 use tauri::{AppHandle, Emitter, Manager};
 use regex::Regex;
 
+#[cfg(target_os = "windows")]
+use std::os::windows::process::CommandExt;
+
 // Ponytail: Ưu tiên tìm yt-dlp và ffmpeg trong thư mục resource bundle. Nếu không có thì fallback dùng system PATH.
 fn get_yt_dlp_path(app: &AppHandle) -> String {
+    let exe_name = if cfg!(target_os = "windows") { "yt-dlp.exe" } else { "yt-dlp" };
     if let Ok(res_dir) = app.path().resource_dir() {
-        let bundled = res_dir.join("bin").join("yt-dlp.exe");
+        let bundled = res_dir.join("bin").join(exe_name);
         if bundled.exists() {
             return bundled.to_string_lossy().to_string();
         }
@@ -15,8 +19,9 @@ fn get_yt_dlp_path(app: &AppHandle) -> String {
 }
 
 fn get_ffmpeg_args(app: &AppHandle) -> Vec<String> {
+    let exe_name = if cfg!(target_os = "windows") { "ffmpeg.exe" } else { "ffmpeg" };
     if let Ok(res_dir) = app.path().resource_dir() {
-        let bundled = res_dir.join("bin").join("ffmpeg.exe");
+        let bundled = res_dir.join("bin").join(exe_name);
         if bundled.exists() {
             return vec!["--ffmpeg-location".to_string(), bundled.to_string_lossy().to_string()];
         }
@@ -29,9 +34,12 @@ pub fn get_video_info(app: AppHandle, url: &str) -> Result<serde_json::Value, St
     let mut args = vec!["--dump-json".to_string(), url.to_string()];
     args.extend(get_ffmpeg_args(&app));
 
-    let output = Command::new(get_yt_dlp_path(&app))
-        .args(args)
-        .output()
+    let mut cmd = Command::new(get_yt_dlp_path(&app));
+    cmd.args(args);
+    #[cfg(target_os = "windows")]
+    cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+
+    let output = cmd.output()
         .map_err(|e| format!("Failed to execute yt-dlp: {}", e))?;
 
     if !output.status.success() {
@@ -53,6 +61,11 @@ struct ProgressPayload {
     eta: String,
 }
 
+#[derive(Clone, serde::Serialize)]
+struct DownloadErrorPayload {
+    error: String,
+}
+
 #[tauri::command]
 pub fn download_video(app: AppHandle, url: String) -> Result<(), String> {
     let yt_dlp_path = get_yt_dlp_path(&app);
@@ -62,15 +75,48 @@ pub fn download_video(app: AppHandle, url: String) -> Result<(), String> {
         let mut args = vec!["--newline".to_string(), url];
         args.extend(ffmpeg_args);
 
-        let mut child = Command::new(yt_dlp_path)
-            .args(args)
+        let mut cmd = Command::new(yt_dlp_path);
+        cmd.args(args)
             .stdout(Stdio::piped())
-            .spawn()
-            .expect("Failed to spawn yt-dlp");
+            .stderr(Stdio::piped());
+            
+        #[cfg(target_os = "windows")]
+        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
 
-        let stdout = child.stdout.take().unwrap();
-        let reader = BufReader::new(stdout);
+        let mut child = match cmd.spawn() {
+            Ok(c) => c,
+            Err(e) => {
+                let _ = app.emit("download-error", DownloadErrorPayload { error: format!("Failed to spawn yt-dlp: {}", e) });
+                return;
+            }
+        };
+
+        let stdout = match child.stdout.take() {
+            Some(s) => s,
+            None => {
+                let _ = app.emit("download-error", DownloadErrorPayload { error: "Failed to capture stdout".to_string() });
+                return;
+            }
+        };
         
+        let stderr = match child.stderr.take() {
+            Some(s) => s,
+            None => {
+                let _ = app.emit("download-error", DownloadErrorPayload { error: "Failed to capture stderr".to_string() });
+                return;
+            }
+        };
+
+        // Spawn a thread to concurrently read stderr and prevent pipe deadlocks
+        let stderr_thread = std::thread::spawn(move || {
+            use std::io::Read;
+            let mut stderr_string = String::new();
+            let mut reader = BufReader::new(stderr);
+            let _ = reader.read_to_string(&mut stderr_string);
+            stderr_string
+        });
+
+        let reader = BufReader::new(stdout);
         let re = Regex::new(r"\[download\]\s+(?P<percent>[0-9\.]+)%.*at\s+(?P<speed>[a-zA-Z0-9\./~]+)\s+ETA\s+(?P<eta>[0-9:]+)").unwrap();
 
         for line in reader.lines() {
@@ -88,8 +134,25 @@ pub fn download_video(app: AppHandle, url: String) -> Result<(), String> {
                 }
             }
         }
-        let _ = child.wait();
-        let _ = app.emit("download-complete", ());
+        
+        let stderr_output = stderr_thread.join().unwrap_or_default();
+
+        match child.wait() {
+            Ok(status) => {
+                if status.success() {
+                    let _ = app.emit("download-complete", ());
+                } else {
+                    let _ = app.emit("download-error", DownloadErrorPayload { 
+                        error: format!("yt-dlp failed: {}", stderr_output) 
+                    });
+                }
+            }
+            Err(e) => {
+                let _ = app.emit("download-error", DownloadErrorPayload { 
+                    error: format!("Failed to wait for yt-dlp: {}", e) 
+                });
+            }
+        }
     });
     
     Ok(())
