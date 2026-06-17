@@ -1,21 +1,50 @@
-# UI/UX Guidelines
+# UI/UX Design System
 
-ZenYT must feature a stunning, premium interface. We want users to be wowed at first glance.
+ZenYT aims to look like a premium, paid application. We achieve this through meticulous attention to detail in our Vanilla CSS.
 
-## 1. Styling Strategy
-- **Strictly Vanilla CSS**: We use standard CSS (`.css` files) to maintain absolute control over styling. No Tailwind.
-- **CSS Variables (Custom Properties)**: Extensively use CSS variables for colors, spacing, and typography to maintain a cohesive design system.
+## 1. Design Philosophy
+- **Minimalism & Focus**: The main screen should have a single, prominent input field for the URL. No clutter.
+- **Dark Mode Aesthetic**: Deep, rich dark backgrounds reduce eye strain and look modern.
+- **Glassmorphism**: Modals and sidebars should use semi-transparent backgrounds with background blur.
 
-## 2. Aesthetics
-- **Dark Mode by Default**: Implement a sleek, modern dark mode using deep grays/blacks and vibrant accent colors (e.g., neon purples, electric blues).
-- **Glassmorphism**: Use subtle translucent backgrounds with `backdrop-filter: blur()` for overlays, sidebars, and modals.
-- **Gradients**: Use smooth, well-blended linear or radial gradients. Avoid harsh or generic colors.
+## 2. CSS Variables (The Palette)
+Create a `global.css` file defining these tokens:
+```css
+:root {
+  /* Backgrounds */
+  --bg-primary: #0F1115;      /* Deep dark background */
+  --bg-secondary: #1A1D24;    /* Slightly lighter for cards/panels */
+  --bg-glass: rgba(26, 29, 36, 0.6);
+
+  /* Accents */
+  --accent-primary: #6C5CE7;  /* Premium Purple */
+  --accent-hover: #8172F0;
+  --accent-success: #00B894;  /* Green for completed downloads */
+  --accent-danger: #D63031;   /* Red for errors/cancels */
+
+  /* Text */
+  --text-primary: #FFFFFF;
+  --text-secondary: #A0AAB2;
+  --text-muted: #6B7280;
+
+  /* Geometry */
+  --border-radius-sm: 6px;
+  --border-radius-md: 12px;
+  --border-radius-lg: 20px;
+}
+```
 
 ## 3. Typography
-- Use modern sans-serif fonts from Google Fonts (e.g., Inter, Roboto, or Outfit).
-- Maintain a clear hierarchy (H1 -> H6).
+- **Primary Font**: `Inter`, `Roboto`, or system default sans-serif.
+- **Weights**: Use 400 for regular text, 500 for buttons, 600/700 for headings.
+- **Line Height**: 1.5 for readability.
 
-## 4. Interactivity & Motion
-- **Micro-animations**: Elements should respond to hover, active, and focus states.
-- Smooth transitions for layout changes and state updates.
-- Real-time visual feedback for downloads (progress bars, speed metrics).
+## 4. Micro-Interactions
+- **Buttons**: Every clickable element must have a `transition: all 0.2s ease;`. On hover, buttons should slightly lighten and lift (`transform: translateY(-1px)`). On click (active state), they should press down.
+- **Inputs**: The URL input should have a subtle glowing box-shadow when focused: `box-shadow: 0 0 0 2px var(--accent-primary);`
+- **Progress Bars**: The width of the progress bar must transition smoothly. Use `transition: width 0.3s linear;` to prevent jerky updates from yt-dlp parsing.
+
+## 5. Layout Structure
+- **Top Bar**: Custom window dragging area (Tauri `data-tauri-drag-region`) to eliminate the default OS title bar, creating a seamless app window.
+- **Main Area**: Centered URL input.
+- **Queue Panel**: A slide-up or side panel showing active and past downloads, styled as individual cards.

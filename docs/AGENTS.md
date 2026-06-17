@@ -1,20 +1,23 @@
-# AI Agent Rules for ZenYT
+# AI Assistant & Developer Guidelines
 
-These rules are guidelines for any AI coding assistant or agent working on this repository.
+This document provides context and rules for AI coding assistants (like GitHub Copilot, Cursor, or Gemini) and human developers working on ZenYT.
 
-## 1. General Principles
-- **Be flexible and open-minded**: These rules are "thoáng" (flexible). Don't over-constrain yourself. Always prioritize finding the most optimal and practical solution over rigidly adhering to convention.
-- **Do not over-engineer**: Keep the codebase simple, readable, and maintainable.
+## 1. "Thoáng" (Flexible) Mindset
+- **Pragmatism over Dogma**: We prefer code that works reliably, reads easily, and performs well over code that strictly follows complex design patterns.
+- **Refactoring**: If you see a messy function, you are encouraged to refactor it, provided you do not break the core functionality. Do not ask for permission for minor cleanups.
+- **Creative Freedom**: If a feature can be implemented in a better, more visually appealing way than requested, implement the better version.
 
-## 2. Tech Stack Context
-- **Core**: Rust (Tauri). Keep the backend lightweight.
-- **Frontend**: React (Vite) + Vanilla CSS. Do not use TailwindCSS. Focus on a high-end, premium aesthetic.
-- **Tooling**: `yt-dlp`. Understand its CLI arguments and use it effectively.
+## 2. Code Quality & Standards
+- **Vanilla CSS Priority**: **DO NOT** use TailwindCSS, Bootstrap, or Material UI. We rely on handcrafted Vanilla CSS. Use CSS variables in a `root.css` file to maintain a design system.
+- **Rust Backend**: Keep the Rust code safe. Handle `Result` and `Option` gracefully. Do not use `.unwrap()` in production paths; use proper error handling to pass error messages back to the UI.
+- **React Frontend**: Use functional components and Hooks. Keep components small and focused.
 
-## 3. Workflow
-- Focus strictly on the task requested by the user.
-- Leave existing, unrelated code untouched unless specifically asked.
-- Avoid introducing unnecessary third-party dependencies unless strictly required. 
-- Write clean and self-explanatory code.
+## 3. UI/UX Focus
+- The user experience is paramount. When writing frontend code, always consider:
+  - Is there a loading state?
+  - Are errors displayed gracefully (e.g., Toast notifications instead of `alert()`)?
+  - Do buttons have hover and active states?
 
-Remember: You have the autonomy to suggest better architectural or design choices if you believe they will significantly improve the application.
+## 4. Working with `yt-dlp`
+- Always assume `yt-dlp` commands might fail (e.g., due to geographic restrictions, deleted videos). Ensure the Rust backend catches standard error output (`stderr`) and sends it to the frontend for the user to see.
+- When parsing `yt-dlp` JSON output, be aware that not all fields are guaranteed to exist. Use optional chaining in JS or `Option<T>` in Rust.
