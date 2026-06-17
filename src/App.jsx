@@ -1,49 +1,85 @@
 import { useState } from "react";
-import reactLogo from "./assets/react.svg";
 import { invoke } from "@tauri-apps/api/core";
+import { useDownload } from "./hooks/useDownload";
 import "./App.css";
 
 function App() {
-  const [greetMsg, setGreetMsg] = useState("");
-  const [name, setName] = useState("");
+  const [url, setUrl] = useState("");
+  const [videoInfo, setVideoInfo] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  
+  const { progress, downloading, startDownload } = useDownload();
 
-  async function greet() {
-    // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-    setGreetMsg(await invoke("greet", { name }));
+  async function fetchInfo() {
+    if (!url) return;
+    setLoading(true);
+    setError(null);
+    setVideoInfo(null);
+    try {
+      const result = await invoke("get_video_info", { url });
+      setVideoInfo(result);
+    } catch (e) {
+      setError(e);
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
     <main className="container">
-      <h1>Welcome to Tauri + React</h1>
-
-      <div className="row">
-        <a href="https://vite.dev" target="_blank">
-          <img src="/vite.svg" className="logo vite" alt="Vite logo" />
-        </a>
-        <a href="https://tauri.app" target="_blank">
-          <img src="/tauri.svg" className="logo tauri" alt="Tauri logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <p>Click on the Tauri, Vite, and React logos to learn more.</p>
+      <h1>ZenYT</h1>
+      <p>Minimal yt-dlp GUI</p>
 
       <form
         className="row"
         onSubmit={(e) => {
           e.preventDefault();
-          greet();
+          fetchInfo();
         }}
       >
         <input
-          id="greet-input"
-          onChange={(e) => setName(e.currentTarget.value)}
-          placeholder="Enter a name..."
+          value={url}
+          onChange={(e) => setUrl(e.currentTarget.value)}
+          placeholder="Enter YouTube URL..."
+          style={{ width: "300px" }}
+          disabled={downloading}
         />
-        <button type="submit">Greet</button>
+        <button type="submit" disabled={loading || downloading}>
+          {loading ? "Fetching..." : "Fetch Info"}
+        </button>
       </form>
-      <p>{greetMsg}</p>
+
+      {error && <p style={{ color: "#ff6b6b", marginTop: "1rem" }}>Error: {error}</p>}
+
+      {videoInfo && (
+        <div className="info-card">
+          {videoInfo.thumbnail && (
+            <img src={videoInfo.thumbnail} alt="Thumbnail" />
+          )}
+          <h3>{videoInfo.title}</h3>
+          <p>Duration: {videoInfo.duration}s | Uploader: {videoInfo.uploader}</p>
+          
+          <button 
+            style={{ marginTop: "15px", width: "100%" }}
+            onClick={() => startDownload(url)}
+            disabled={downloading}
+          >
+            {downloading ? "Downloading..." : "Download Video"}
+          </button>
+          
+          {progress && (
+            <div style={{ marginTop: "15px" }}>
+              <div style={{ background: "#333", height: "10px", borderRadius: "5px", overflow: "hidden" }}>
+                <div style={{ background: "#24c8db", height: "100%", width: `${progress.percentage}%`, transition: "width 0.2s" }} />
+              </div>
+              <p style={{ marginTop: "5px", textAlign: "center" }}>
+                {progress.percentage}% | Speed: {progress.speed} | ETA: {progress.eta}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
     </main>
   );
 }
