@@ -21,3 +21,9 @@ This document provides context and rules for AI coding assistants (like GitHub C
 ## 4. Working with `yt-dlp`
 - Always assume `yt-dlp` commands might fail (e.g., due to geographic restrictions, deleted videos). Ensure the Rust backend catches standard error output (`stderr`) and sends it to the frontend for the user to see.
 - When parsing `yt-dlp` JSON output, be aware that not all fields are guaranteed to exist. Use optional chaining in JS or `Option<T>` in Rust.
+
+## 5. AI Workflows
+- **Planning Mode**: Before executing complex tasks (e.g., implementing Phase 1, Phase 2, etc.), always create or update an `implementation_plan.md` and wait for user approval.
+- **Task Tracking**: Maintain a `task.md` document for any multi-step processes. Mark items as `[/]` when in progress and `[x]` when completed.
+- **Verification**: Always verify code changes locally. If a UI change is made, confirm it does not break the design system. If a Rust change is made, ensure `cargo check` passes.
+- **Documentation Updates**: Whenever the architecture or API changes, immediately reflect those changes in the `docs/` folder.
