@@ -1,7 +1,6 @@
 use std::process::{Command, Stdio};
 use std::io::{BufRead, BufReader};
 use tauri::{AppHandle, Emitter, Manager};
-use regex::Regex;
 
 #[cfg(target_os = "windows")]
 use std::os::windows::process::CommandExt;
@@ -117,20 +116,32 @@ pub fn download_video(app: AppHandle, url: String) -> Result<(), String> {
         });
 
         let reader = BufReader::new(stdout);
-        let re = Regex::new(r"\[download\]\s+(?P<percent>[0-9\.]+)%.*at\s+(?P<speed>[a-zA-Z0-9\./~]+)\s+ETA\s+(?P<eta>[0-9:]+)").unwrap();
 
         for line in reader.lines() {
             if let Ok(line) = line {
-                if let Some(caps) = re.captures(&line) {
-                    let percent = caps.name("percent").map_or("", |m| m.as_str()).to_string();
-                    let speed = caps.name("speed").map_or("", |m| m.as_str()).to_string();
-                    let eta = caps.name("eta").map_or("", |m| m.as_str()).to_string();
-                    
-                    let _ = app.emit("download-progress", ProgressPayload {
-                        percentage: percent,
-                        speed,
-                        eta
-                    });
+                if line.starts_with("[download]") {
+                    let mut percent = String::new();
+                    let mut speed = String::new();
+                    let mut eta = String::new();
+
+                    let parts: Vec<&str> = line.split_whitespace().collect();
+                    for i in 1..parts.len() {
+                        if parts[i].ends_with('%') {
+                            percent = parts[i].trim_end_matches('%').to_string();
+                        } else if parts[i] == "at" && i + 1 < parts.len() {
+                            speed = parts[i + 1].to_string();
+                        } else if parts[i] == "ETA" && i + 1 < parts.len() {
+                            eta = parts[i + 1].to_string();
+                        }
+                    }
+
+                    if !percent.is_empty() {
+                        let _ = app.emit("download-progress", ProgressPayload {
+                            percentage: percent,
+                            speed,
+                            eta
+                        });
+                    }
                 }
             }
         }
