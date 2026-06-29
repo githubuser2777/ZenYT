@@ -53,8 +53,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tagName: app-v__VERSION__ # Tauri action tự động thay __VERSION__ bằng version trong tauri.conf.json
-          releaseName: "ZenYT v__VERSION__"
+          tagName: ${{ github.ref_name }}
+          releaseName: "ZenYT ${{ github.ref_name }}"
           releaseBody: "Tải file setup.exe ở bên dưới để cài đặt."
           releaseDraft: false
           prerelease: false
