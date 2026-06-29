@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { open } from "@tauri-apps/plugin-dialog";
 import { useDownload } from "./hooks/useDownload";
 import "./App.css";
 
@@ -8,6 +9,7 @@ function App() {
   const [videoInfo, setVideoInfo] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [format, setFormat] = useState("best");
   
   const { progress, downloading, downloadError, downloadComplete, startDownload } = useDownload();
 
@@ -23,6 +25,22 @@ function App() {
       setError(e);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleDownload() {
+    try {
+      const selectedPath = await open({
+        directory: true,
+        multiple: false,
+        title: "Select Save Folder",
+      });
+      
+      if (selectedPath) {
+        startDownload(url, selectedPath, format);
+      }
+    } catch (err) {
+      console.error("Failed to open dialog", err);
     }
   }
 
@@ -62,10 +80,20 @@ function App() {
             Duration: {videoInfo.duration ? `${videoInfo.duration}s` : "Unknown"} | 
             Uploader: {videoInfo.uploader || "Unknown"}
           </p>
+          <select 
+            value={format} 
+            onChange={(e) => setFormat(e.target.value)}
+            disabled={downloading}
+            style={{ marginTop: "15px", width: "100%", padding: "8px", borderRadius: "8px", border: "1px solid #444", background: "#2a2a2a", color: "#fff" }}
+          >
+            <option value="best">Best Quality (Video + Audio)</option>
+            <option value="1080p">1080p MP4 (Video + Audio)</option>
+            <option value="audio">Audio Only (MP3)</option>
+          </select>
           
           <button 
-            style={{ marginTop: "15px", width: "100%" }}
-            onClick={() => startDownload(url)}
+            style={{ marginTop: "10px", width: "100%" }}
+            onClick={handleDownload}
             disabled={downloading}
           >
             {downloading ? "Downloading..." : "Download Video"}

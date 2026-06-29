@@ -66,12 +66,34 @@ struct DownloadErrorPayload {
 }
 
 #[tauri::command]
-pub fn download_video(app: AppHandle, url: String) -> Result<(), String> {
+pub fn download_video(app: AppHandle, url: String, output_dir: Option<String>, format: Option<String>) -> Result<(), String> {
     let yt_dlp_path = get_yt_dlp_path(&app);
     let ffmpeg_args = get_ffmpeg_args(&app);
 
     std::thread::spawn(move || {
-        let mut args = vec!["--newline".to_string(), url];
+        let mut args = vec!["--newline".to_string()];
+
+        if let Some(dir) = output_dir {
+            args.push("-P".to_string());
+            args.push(dir);
+        }
+
+        match format.as_deref() {
+            Some("audio") => {
+                args.push("-x".to_string());
+                args.push("--audio-format".to_string());
+                args.push("mp3".to_string());
+            }
+            Some("1080p") => {
+                args.push("-f".to_string());
+                args.push("bv*[ext=mp4][height<=1080]+ba[ext=m4a]/b[ext=mp4]".to_string());
+            }
+            _ => {
+                // best by default
+            }
+        }
+
+        args.push(url);
         args.extend(ffmpeg_args);
 
         let mut cmd = Command::new(yt_dlp_path);

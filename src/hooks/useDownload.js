@@ -34,13 +34,13 @@ export function useDownload() {
     };
   }, []);
 
-  const startDownload = async (url) => {
+  const startDownload = async (url, outputDir, format) => {
     setDownloading(true);
     setDownloadError(null);
     setDownloadComplete(false);
     setProgress({ percentage: "0", speed: "...", eta: "..." });
     try {
-      await invoke("download_video", { url });
+      await invoke("download_video", { url, outputDir, format });
     } catch (e) {
       console.error(e);
       setDownloading(false);
