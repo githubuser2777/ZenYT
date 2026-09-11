@@ -4,7 +4,7 @@
 
 **The Ultimate Lightweight YouTube Desktop Client**
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![License: GPL-3.0-only](https://img.shields.io/badge/License-GPL--3.0--only-blue.svg)](LICENSE)
 [![Tauri Version](https://img.shields.io/badge/Tauri-v2.0-blue.svg?logo=tauri)](https://tauri.app)
 [![React Version](https://img.shields.io/badge/React-v19.0-61dafb.svg?logo=react)](https://react.dev)
 [![Rust](https://img.shields.io/badge/Rust-1.75%2B-orange.svg?logo=rust)](https://www.rust-lang.org/)
@@ -148,7 +148,7 @@ We welcome contributions! Please review our [Code of Conduct](CODE_OF_CONDUCT.md
 
 ## 📄 License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+This project is licensed under the GNU General Public License v3.0 (GPL-3.0-only). See the [LICENSE](LICENSE) file for details.
 
 <div align="center">
   <br />
